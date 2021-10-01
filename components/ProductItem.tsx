@@ -1,15 +1,45 @@
+import { memo, useState } from 'react'
+import { AddProductToWishListProps } from './AddProductToWishList'
+import dynamic from 'next/dynamic'
+import lodash, { isEqual } from 'lodash'
+// import { AddProductToWishList } from './AddProductToWishList'
+
+const AddProductToWishList = dynamic<AddProductToWishListProps>(() => {
+    return import('./AddProductToWishList').then(mod => mod.AddProductToWishList)
+}, {
+    loading: () => <span>Carregando...</span>
+})
+
 interface ProductItemProps {
     product: {
         id: number;
         price: number;
+        priceFormatted: string;
         title: string;
     }
+    onAddToWishList : (id: number) => void;
 }
 
-export function ProductItem({ product } : ProductItemProps) {
+function ProductItemComponent({ product, onAddToWishList } : ProductItemProps) {
+    const [isAddingToWishList, setIsAddingToWishList] = useState(false) 
+
     return (
         <div>
-            {product.title} - <strong>R$ {product.price}</strong>
+            {product.title} - <strong>R$ {product.priceFormatted}</strong>
+            <button onClick={() => setIsAddingToWishList(true)}>Adicionar aos Favoritos</button>
+
+            {   isAddingToWishList &&
+                (
+                    <AddProductToWishList 
+                        onAddToWishList={() => onAddToWishList(product.id)}
+                        onRequestClose={() => setIsAddingToWishList(false)}
+                    />
+                )
+            }
         </div>
     )
 }
+
+export const ProductItem = memo(ProductItemComponent, (prevProps, nextProps) => {
+    return lodash.isEqual(prevProps.product, nextProps.product)
+})
